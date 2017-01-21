@@ -536,6 +536,12 @@ func (c *Conn) releaseStream(stream int) {
 	delete(c.calls, stream)
 	c.mu.Unlock()
 
+	// Objects put back to pool could be garbage-collected by runtime.
+	// A timer object can only be garbage-collected after expiration.
+	// Stop the timer first so that it does not occupying memory longer than
+	// needed.
+	call.timer.Stop()
+
 	streamPool.Put(call)
 	c.streams.Clear(stream)
 }
